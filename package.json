@@ -1,18 +1,39 @@
 {
     "name": "smart-tab",
     "version": "1.0.0",
-    "description": "智能浏览器新标签页",
+    "description": "一个现代化、可定制、支持PWA的智能浏览器新标签页",
     "main": "index.html",
     "scripts": {
-        "start": "http-server -p 3000",
-        "build": "echo 'No build step required'",
-        "deploy": "gh-pages -d ."
+        "start": "npx http-server -p 3000 -o",
+        "build": "echo '无需构建步骤'",
+        "deploy": "gh-pages -d .",
+        "test": "echo '暂无测试'"
     },
-    "keywords": ["newtab", "browser", "homepage", "pwa"],
-    "author": "Your Name",
+    "keywords": [
+        "newtab",
+        "browser",
+        "homepage",
+        "pwa",
+        "productivity",
+        "dashboard"
+    ],
+    "author": "chnbsdan",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/chnbsdan/smart-tab.git"
+    },
+    "bugs": {
+        "url": "https://github.com/chnbsdan/smart-tab/issues"
+    },
+    "homepage": "https://github.com/chnbsdan/smart-tab#readme",
     "devDependencies": {
         "gh-pages": "^5.0.0",
         "http-server": "^14.1.1"
-    }
+    },
+    "browserslist": [
+        "last 2 versions",
+        "not dead",
+        "> 0.5%"
+    ]
 }
