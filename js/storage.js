@@ -7,11 +7,20 @@ class StorageManager {
                 theme: 'light',
                 searchEngine: 'baidu',
                 notifications: false,
-                autoBackup: true
+                autoBackup: true,
+                showStatusBar: true
             },
             widgets: [],
-            bookmarks: [],
-            userData: {}
+            bookmarks: [
+                { name: '微博', url: 'https://weibo.com', icon: '🔴' },
+                { name: '抖音', url: 'https://douyin.com', icon: '🎵' },
+                { name: 'B站', url: 'https://bilibili.com', icon: '📺' },
+                { name: '知乎', url: 'https://zhihu.com', icon: '❓' },
+                { name: '淘宝', url: 'https://taobao.com', icon: '🛒' },
+                { name: '小红书', url: 'https://xiaohongshu.com', icon: '📕' }
+            ],
+            userData: {},
+            backups: []
         };
         this.init();
     }
@@ -27,12 +36,24 @@ class StorageManager {
 
     get(key) {
         const value = localStorage.getItem(this.prefix + key);
-        return value ? JSON.parse(value) : null;
+        if (!value) return null;
+        
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            return value;
+        }
     }
 
     set(key, value) {
-        localStorage.setItem(this.prefix + key, JSON.stringify(value));
+        const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
+        localStorage.setItem(this.prefix + key, stringValue);
         this.dispatchEvent(key, value);
+        
+        // 自动备份
+        if (key !== 'backups' && this.get('settings')?.autoBackup) {
+            this.autoBackup();
+        }
     }
 
     remove(key) {
@@ -59,7 +80,7 @@ class StorageManager {
         const data = {};
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key.startsWith(this.prefix)) {
+            if (key && key.startsWith(this.prefix)) {
                 data[key] = localStorage.getItem(key);
             }
         }
@@ -76,24 +97,46 @@ class StorageManager {
             }
             return true;
         } catch (e) {
-            console.error('Import failed:', e);
+            console.error('导入失败:', e);
             return false;
         }
     }
 
     autoBackup() {
-        if (this.get('settings').autoBackup) {
-            const backup = this.export();
-            const backups = this.get('backups') || [];
-            backups.push({
-                timestamp: Date.now(),
-                data: backup
-            });
-            // 只保留最近10个备份
-            if (backups.length > 10) backups.shift();
-            this.set('backups', backups);
+        const backup = this.export();
+        const backups = this.get('backups') || [];
+        backups.push({
+            id: Utils.generateId(),
+            timestamp: Date.now(),
+            date: new Date().toISOString(),
+            data: backup
+        });
+        
+        // 只保留最近20个备份
+        while (backups.length > 20) {
+            backups.shift();
         }
+        
+        this.set('backups', backups);
+    }
+
+    restoreBackup(backupId) {
+        const backups = this.get('backups') || [];
+        const backup = backups.find(b => b.id === backupId);
+        if (backup) {
+            return this.import(backup.data);
+        }
+        return false;
+    }
+
+    getBackups() {
+        return this.get('backups') || [];
+    }
+
+    clearBackups() {
+        this.set('backups', []);
     }
 }
 
+// 导出到全局
 window.storage = new StorageManager();
