@@ -1,0 +1,94 @@
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding: 12px;
+    }
+
+    .grid-system {
+        gap: 12px;
+    }
+
+    .ai-assistants {
+        gap: 10px;
+    }
+
+    .ai-card {
+        padding: 12px;
+    }
+
+    .ai-card div:first-child {
+        font-size: 1.5rem;
+    }
+
+    .status-bar {
+        font-size: 12px;
+        padding: 8px 16px;
+    }
+
+    .search-bar {
+        padding: 8px 16px;
+    }
+
+    .search-input {
+        font-size: 14px;
+    }
+
+    .search-btn {
+        padding: 6px 16px;
+        font-size: 14px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .nav-sidebar {
+        width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-system {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-assistants {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .status-bar {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+}
+
+/* 平板适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid-system {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+    body.dark-mode {
+        background: #1a1a2e;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .search-bar,
+    .ai-assistants,
+    .nav-sidebar,
+    .menu-toggle,
+    .context-menu {
+        display: none;
+    }
+}
