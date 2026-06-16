@@ -1,16 +1,19 @@
 {
     "name": "灵动标签页",
     "short_name": "灵动Tab",
-    "description": "智能浏览器新标签页",
+    "description": "智能浏览器新标签页 - 你的个性化浏览器主页",
     "start_url": "/",
     "display": "standalone",
     "theme_color": "#6366f1",
     "background_color": "#667eea",
+    "orientation": "portrait-primary",
+    "scope": "/",
     "icons": [
         {
             "src": "assets/icons/icon-72.png",
             "sizes": "72x72",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "assets/icons/icon-96.png",
@@ -47,5 +50,31 @@
             "sizes": "512x512",
             "type": "image/png"
         }
-    ]
+    ],
+    "shortcuts": [
+        {
+            "name": "添加组件",
+            "short_name": "添加",
+            "description": "快速添加新组件",
+            "url": "/",
+            "icons": [{ "src": "assets/icons/add.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "设置",
+            "short_name": "设置",
+            "description": "打开设置面板",
+            "url": "/",
+            "icons": [{ "src": "assets/icons/settings.png", "sizes": "96x96" }]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "assets/screenshots/desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ],
+    "categories": ["productivity", "utilities"],
+    "prefer_related_applications": false
 }
