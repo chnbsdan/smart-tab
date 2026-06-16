@@ -1,14 +1,27 @@
 /* 响应式设计 */
+@media (max-width: 1024px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .grid-system {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 12px;
     }
 
     .grid-system {
+        grid-template-columns: 1fr;
         gap: 12px;
     }
 
     .ai-assistants {
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
 
@@ -23,10 +36,14 @@
     .status-bar {
         font-size: 12px;
         padding: 8px 16px;
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
     }
 
     .search-bar {
         padding: 8px 16px;
+        margin-bottom: 16px;
     }
 
     .search-input {
@@ -38,40 +55,89 @@
         font-size: 14px;
     }
 
-    .card {
-        padding: 16px;
+    .menu-toggle {
+        width: 40px;
+        height: 40px;
+        right: 12px;
+        top: 12px;
+        font-size: 20px;
     }
 
     .nav-sidebar {
         width: 280px;
     }
-}
-
-@media (max-width: 480px) {
-    .grid-system {
-        grid-template-columns: 1fr;
-    }
-
-    .ai-assistants {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .status-bar {
-        flex-direction: column;
-        gap: 8px;
-        text-align: center;
-    }
 
     .modal-content {
         width: 95%;
         padding: 16px;
+        max-height: 85vh;
+    }
+
+    .bookmarks-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+
+    .bookmark-card {
+        padding: 10px;
+    }
+
+    .bookmark-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .bookmark-name {
+        font-size: 12px;
     }
 }
 
-/* 平板适配 */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+
+    .ai-assistants {
+        grid-template-columns: 1fr;
+    }
+
+    .status-bar {
+        font-size: 11px;
+    }
+
+    .search-bar {
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        width: 100%;
+        order: 1;
+    }
+
+    .search-btn {
+        width: 100%;
+        order: 2;
+    }
+
+    .component-card {
+        padding: 16px;
+    }
+
+    .calendar-day {
+        padding: 4px;
+        font-size: 12px;
+    }
+
+    .countdown-number {
+        font-size: 1.5rem;
+    }
+}
+
+/* 平板横屏 */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
     .grid-system {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -82,13 +148,45 @@
     }
 }
 
+/* 高分辨率屏幕 */
+@media (min-width: 1920px) {
+    .container {
+        max-width: 1600px;
+    }
+    
+    .grid-system {
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    }
+}
+
 /* 打印样式 */
 @media print {
     .search-bar,
     .ai-assistants,
     .nav-sidebar,
     .menu-toggle,
-    .context-menu {
+    .context-menu,
+    .modal {
         display: none;
+    }
+    
+    .component-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .component-card:hover {
+        transform: none;
+    }
+    
+    .nav-item:hover {
+        transform: none;
+    }
+    
+    .context-menu-item {
+        padding: 14px 20px;
     }
 }
