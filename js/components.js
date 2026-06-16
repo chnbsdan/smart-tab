@@ -2,7 +2,7 @@
 class ComponentManager {
     constructor() {
         this.components = new Map();
-        this.activeComponents = JSON.parse(localStorage.getItem('activeComponents')) || [];
+        this.activeComponents = storage.get('widgets') || [];
         this.initComponents();
     }
 
@@ -12,10 +12,8 @@ class ComponentManager {
         this.registerComponent('todo', TodoComponent);
         this.registerComponent('calendar', CalendarComponent);
         this.registerComponent('countdown', CountdownComponent);
-        this.registerComponent('stocks', StocksComponent);
         this.registerComponent('poetry', PoetryComponent);
         this.registerComponent('english', EnglishComponent);
-        this.registerComponent('memorial', MemorialComponent);
         this.registerComponent('hotsearch', HotSearchComponent);
         this.registerComponent('woodfish', WoodfishComponent);
     }
@@ -24,21 +22,21 @@ class ComponentManager {
         this.components.set(name, componentClass);
     }
 
-    addComponent(name, position = null) {
+    addComponent(name) {
         const ComponentClass = this.components.get(name);
         if (ComponentClass) {
-            const component = new ComponentClass();
+            const instance = new ComponentClass();
             const componentId = `${name}_${Date.now()}`;
             this.activeComponents.push({
                 id: componentId,
                 name: name,
-                position: position || this.activeComponents.length,
-                data: component.getDefaultData()
+                data: instance.getDefaultData()
             });
             this.save();
             this.render();
             return componentId;
         }
+        return null;
     }
 
     removeComponent(componentId) {
@@ -57,12 +55,17 @@ class ComponentManager {
     }
 
     save() {
-        localStorage.setItem('activeComponents', JSON.stringify(this.activeComponents));
+        storage.set('widgets', this.activeComponents);
     }
 
     render() {
         const container = document.getElementById('widgetsGrid');
         if (!container) return;
+
+        if (this.activeComponents.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: white; padding: 40px;">右键点击或点击侧边栏添加组件</div>';
+            return;
+        }
 
         container.innerHTML = this.activeComponents.map(comp => {
             const ComponentClass = this.components.get(comp.name);
@@ -96,49 +99,58 @@ class WeatherComponent {
         return {
             city: '深圳',
             temperature: 25,
-            weather: '中雨',
-            humidity: 85,
-            wind: '东南风 3级'
+            weather: '晴',
+            humidity: 65,
+            wind: '东南风 2级'
         };
     }
 
     render(id, data) {
+        const weatherIcon = Utils.getWeatherIcon(data.weather);
         return `
-            <div class="card weather-widget" data-component-id="${id}">
+            <div class="component-card weather-widget" data-component-id="${id}">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div>
-                        <div style="font-size: 2rem;">🌤️</div>
+                        <div style="font-size: 2rem;">${weatherIcon}</div>
                         <h3>天气</h3>
-                        <div style="font-size: 2rem; font-weight: bold;">${data.temperature}°C</div>
+                        <div class="weather-temp">${data.temperature}°C</div>
                         <div>${data.weather}</div>
                     </div>
                     <div style="text-align: right;">
-                        <div>${data.city}</div>
-                        <div style="font-size: 12px;">💧 ${data.humidity}%</div>
+                        <div>📍 ${data.city}</div>
+                        <div style="font-size: 12px; margin-top: 8px;">💧 ${data.humidity}%</div>
                         <div style="font-size: 12px;">🌬️ ${data.wind}</div>
                     </div>
                 </div>
-                <button class="refresh-weather" style="margin-top: 12px; width: 100%; background: rgba(255,255,255,0.2); border: none; padding: 8px; border-radius: 8px; cursor: pointer;">刷新</button>
+                <button class="refresh-weather" style="margin-top: 16px; width: 100%; background: rgba(255,255,255,0.2); border: none; padding: 8px; border-radius: 8px; cursor: pointer;">🔄 刷新天气</button>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
             </div>
         `;
     }
 
     bindEvents(id, data, updateCallback) {
-        const refreshBtn = document.querySelector(`[data-component-id="${id}"] .refresh-weather`);
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async () => {
-                const newData = await this.fetchWeather(data.city);
-                updateCallback(newData);
-            });
-        }
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        const refreshBtn = container.querySelector('.refresh-weather');
+        refreshBtn?.addEventListener('click', async () => {
+            const newData = await this.fetchWeather(data.city);
+            updateCallback(newData);
+        });
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
     }
 
     async fetchWeather(city) {
-        // 模拟API调用
+        // 模拟API调用，实际可接入真实天气API
+        const weathers = ['晴', '多云', '阴', '小雨', '中雨'];
         return {
             city: city,
             temperature: Math.floor(Math.random() * 30) + 10,
-            weather: ['晴', '多云', '阴', '小雨', '中雨'][Math.floor(Math.random() * 5)],
+            weather: Utils.randomItem(weathers),
             humidity: Math.floor(Math.random() * 50) + 40,
             wind: ['东北风', '东南风', '西南风', '西北风'][Math.floor(Math.random() * 4)] + ' ' + (Math.floor(Math.random() * 5) + 1) + '级'
         };
@@ -149,14 +161,17 @@ class WeatherComponent {
 class TodoComponent {
     getDefaultData() {
         return {
-            todos: JSON.parse(localStorage.getItem('todos')) || []
+            todos: [
+                { text: '欢迎使用灵动标签页', completed: false, createdAt: new Date().toISOString() },
+                { text: '右键点击添加更多组件', completed: false, createdAt: new Date().toISOString() }
+            ]
         };
     }
 
     render(id, data) {
         const todos = data.todos || [];
         return `
-            <div class="card" data-component-id="${id}">
+            <div class="component-card" data-component-id="${id}">
                 <h3>✅ 待办清单</h3>
                 <div class="todo-list">
                     ${todos.map((todo, idx) => `
@@ -169,9 +184,10 @@ class TodoComponent {
                     ${todos.length === 0 ? '<div style="text-align: center; color: #9ca3af; padding: 20px;">暂无待办事项</div>' : ''}
                 </div>
                 <div class="add-todo-form">
-                    <input type="text" class="add-todo-input" placeholder="添加新待办...">
+                    <input type="text" class="add-todo-input" placeholder="添加新待办..." maxlength="100">
                     <button class="add-todo-btn">添加</button>
                 </div>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
             </div>
         `;
     }
@@ -191,6 +207,12 @@ class TodoComponent {
                 const updatedTodos = [...(data.todos || []), newTodo];
                 updateCallback({ todos: updatedTodos });
                 addInput.value = '';
+            }
+        });
+
+        addInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addBtn.click();
             }
         });
 
@@ -214,6 +236,12 @@ class TodoComponent {
                 updateCallback({ todos: updatedTodos });
             });
         });
+
+        // 删除组件
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
     }
 
     escapeHtml(str) {
@@ -233,7 +261,7 @@ class CalendarComponent {
         return {
             year: now.getFullYear(),
             month: now.getMonth(),
-            events: JSON.parse(localStorage.getItem('calendarEvents')) || {}
+            events: {}
         };
     }
 
@@ -249,7 +277,7 @@ class CalendarComponent {
         for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
         return `
-            <div class="card" data-component-id="${id}">
+            <div class="component-card" data-component-id="${id}">
                 <div class="calendar-header">
                     <button class="calendar-nav-btn" data-dir="-1">◀</button>
                     <h3>${data.year}年${data.month + 1}月</h3>
@@ -260,18 +288,20 @@ class CalendarComponent {
                 </div>
                 <div class="calendar-days">
                     ${days.map(day => `
-                        <div class="calendar-day ${day && isCurrentMonth && day === todayDate ? 'today' : ''}" data-date="${day}">
+                        <div class="calendar-day ${day && isCurrentMonth && day === todayDate ? 'today' : ''} ${!day ? 'empty' : ''}" data-date="${day || ''}">
                             ${day || ''}
                         </div>
                     `).join('')}
                 </div>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
             </div>
         `;
     }
 
     bindEvents(id, data, updateCallback) {
         const container = document.querySelector(`[data-component-id="${id}"]`);
-        
+        if (!container) return;
+
         container.querySelectorAll('.calendar-nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const dir = parseInt(e.target.dataset.dir);
@@ -286,6 +316,11 @@ class CalendarComponent {
                 }
                 updateCallback({ year: newYear, month: newMonth });
             });
+        });
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
         });
     }
 }
@@ -307,6 +342,7 @@ class CountdownComponent {
         const daysUntilFriday = (5 - now.getDay() + 7) % 7;
         const nextFriday = new Date(now);
         nextFriday.setDate(now.getDate() + (daysUntilFriday || 7));
+        nextFriday.setHours(18, 0, 0, 0);
         return nextFriday;
     }
 
@@ -335,33 +371,221 @@ class CountdownComponent {
 
     render(id, data) {
         return `
-            <div class="card" data-component-id="${id}">
+            <div class="component-card" data-component-id="${id}">
                 <h3>⏰ 倒计时</h3>
                 ${data.targets.map(target => `
                     <div class="countdown-item">
-                        <div>${target.icon} ${target.name}</div>
+                        <div class="countdown-name">${target.icon} ${target.name}</div>
                         <div class="countdown-number">${this.getDaysLeft(new Date(target.date))}天</div>
                     </div>
                 `).join('')}
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
             </div>
         `;
     }
 
     bindEvents(id, data, updateCallback) {
-        // 每小时自动刷新
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        // 每小时自动刷新显示
         setInterval(() => {
             updateCallback({ targets: data.targets });
         }, 3600000);
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
     }
 }
 
-// 其他组件类似实现...
-class StocksComponent { getDefaultData() { return { stocks: [] }; } render(id, data) { return '<div>股票组件</div>'; } bindEvents() {} }
-class PoetryComponent { getDefaultData() { return {}; } render(id, data) { return '<div>诗词组件</div>'; } bindEvents() {} }
-class EnglishComponent { getDefaultData() { return {}; } render(id, data) { return '<div>英语组件</div>'; } bindEvents() {} }
-class MemorialComponent { getDefaultData() { return {}; } render(id, data) { return '<div>纪念日组件</div>'; } bindEvents() {} }
-class HotSearchComponent { getDefaultData() { return {}; } render(id, data) { return '<div>热搜组件</div>'; } bindEvents() {} }
-class WoodfishComponent { getDefaultData() { return { count: 0 }; } render(id, data) { return '<div>电子木鱼</div>'; } bindEvents() {} }
+// 诗词组件
+class PoetryComponent {
+    getDefaultData() {
+        return {
+            poems: [
+                { content: '长风破浪会有时，直挂云帆济沧海。', author: '李白' },
+                { content: '人间四月芳菲尽，山寺桃花始盛开。', author: '白居易' },
+                { content: '竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。', author: '苏轼' },
+                { content: '落霞与孤鹜齐飞，秋水共长天一色。', author: '王勃' },
+                { content: '海上生明月，天涯共此时。', author: '张九龄' }
+            ]
+        };
+    }
 
-// 导出组件管理器
+    render(id, data) {
+        const poem = Utils.randomItem(data.poems);
+        return `
+            <div class="component-card" data-component-id="${id}">
+                <h3>📜 今日诗词</h3>
+                <div class="poetry-content">${poem.content}</div>
+                <div class="poetry-author">—— ${poem.author}</div>
+                <button class="refresh-poetry" style="margin-top: 12px; width: 100%; background: #f3f4f6; border: none; padding: 8px; border-radius: 8px; cursor: pointer;">🔄 换一首</button>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+        `;
+    }
+
+    bindEvents(id, data, updateCallback) {
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        const refreshBtn = container.querySelector('.refresh-poetry');
+        refreshBtn?.addEventListener('click', () => {
+            const newPoem = Utils.randomItem(data.poems);
+            const poetryContent = container.querySelector('.poetry-content');
+            const poetryAuthor = container.querySelector('.poetry-author');
+            if (poetryContent && poetryAuthor) {
+                poetryContent.textContent = newPoem.content;
+                poetryAuthor.textContent = `—— ${newPoem.author}`;
+            }
+        });
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
+    }
+}
+
+// 英语组件
+class EnglishComponent {
+    getDefaultData() {
+        return {
+            sentences: [
+                { english: 'The only limit is your mind.', chinese: '唯一的限制是你的思想。' },
+                { english: 'Stay hungry, stay foolish.', chinese: '求知若饥，虚心若愚。' },
+                { english: 'Simplicity is the ultimate sophistication.', chinese: '简单是最终的复杂。' }
+            ]
+        };
+    }
+
+    render(id, data) {
+        const sentence = Utils.randomItem(data.sentences);
+        return `
+            <div class="component-card" data-component-id="${id}">
+                <h3>📖 每日英语</h3>
+                <div class="english-sentence">"${sentence.english}"</div>
+                <div class="english-translation">—— ${sentence.chinese}</div>
+                <button class="refresh-english" style="margin-top: 12px; width: 100%; background: #f3f4f6; border: none; padding: 8px; border-radius: 8px; cursor: pointer;">🔄 换一句</button>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+        `;
+    }
+
+    bindEvents(id, data, updateCallback) {
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        const refreshBtn = container.querySelector('.refresh-english');
+        refreshBtn?.addEventListener('click', () => {
+            const newSentence = Utils.randomItem(data.sentences);
+            const englishContent = container.querySelector('.english-sentence');
+            const chineseContent = container.querySelector('.english-translation');
+            if (englishContent && chineseContent) {
+                englishContent.textContent = `"${newSentence.english}"`;
+                chineseContent.textContent = `—— ${newSentence.chinese}`;
+            }
+        });
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
+    }
+}
+
+// 热搜组件
+class HotSearchComponent {
+    getDefaultData() {
+        return {
+            hotList: [
+                { rank: 1, title: '神舟十九号载人飞船发射成功',热度: '爆' },
+                { rank: 2, title: 'iPhone 17 Pro 全新配色曝光',热度: '热' },
+                { rank: 3, title: '端午节放假安排公布',热度: '热' },
+                { rank: 4, title: '多地高温预警持续',热度: '新' },
+                { rank: 5, title: 'AI新算法突破性进展',热度: '新' }
+            ]
+        };
+    }
+
+    render(id, data) {
+        return `
+            <div class="component-card" data-component-id="${id}">
+                <h3>🔥 热搜榜单</h3>
+                <div class="hotsearch-list">
+                    ${data.hotList.map(item => `
+                        <div class="hotsearch-item">
+                            <span class="hotsearch-rank">${item.rank}</span>
+                            <span style="flex: 1;">${item.title}</span>
+                            <span style="color: #f59e0b;">${item.热度}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+        `;
+    }
+
+    bindEvents(id, data, updateCallback) {
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
+    }
+}
+
+// 电子木鱼组件
+class WoodfishComponent {
+    getDefaultData() {
+        return {
+            count: parseInt(localStorage.getItem('woodfish_count')) || 0
+        };
+    }
+
+    render(id, data) {
+        return `
+            <div class="component-card" data-component-id="${id}">
+                <h3>🐟 电子木鱼</h3>
+                <div class="woodfish-display">
+                    <div style="font-size: 4rem;">🐟</div>
+                    <div class="woodfish-count">${data.count}</div>
+                    <button class="woodfish-btn">敲一下</button>
+                    <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">积功德，心平静</div>
+                </div>
+                <button class="delete-component" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+        `;
+    }
+
+    bindEvents(id, data, updateCallback) {
+        const container = document.querySelector(`[data-component-id="${id}"]`);
+        if (!container) return;
+
+        const knockBtn = container.querySelector('.woodfish-btn');
+        knockBtn?.addEventListener('click', () => {
+            const newCount = data.count + 1;
+            localStorage.setItem('woodfish_count', newCount);
+            updateCallback({ count: newCount });
+            
+            // 敲击动画
+            const fishIcon = container.querySelector('.woodfish-display div:first-child');
+            fishIcon.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                fishIcon.style.transform = 'scale(1)';
+            }, 100);
+        });
+
+        const deleteBtn = container.querySelector('.delete-component');
+        deleteBtn?.addEventListener('click', () => {
+            window.componentManager.removeComponent(id);
+        });
+    }
+}
+
+// 导出到全局
 window.componentManager = new ComponentManager();
